@@ -261,40 +261,51 @@ function renderTabs() {
 function getCurrentTask() { return tasks.find(t => String(t.id) === String(currentTaskId)) || tasks[0] || fallbackTasks[0]; }
 function renderTask() {
   const task = getCurrentTask();
-  const hasImage = Boolean(task.image && task.image.fileId);
+  const hasImage = Boolean(task.image?.fileId || task.imageFileId || task.image?.directUrl);
+  const imageBlock = hasImage
+    ? `<div id="task-image-box" class="task-image-box"><div class="image-loading">🖼 Загружаем картинку задания...</div></div>`
+    : '';
+
   document.getElementById('task-content').innerHTML = `
-    <div class="task-header"><span class="badge">Задание ${escapeHTML(task.id)}</span><h2>${escapeHTML(task.title)}</h2></div>
-    <p class="instruction"><em>${escapeHTML(task.instruction)}</em></p>
-    <div id="task-image-box" class="task-image-box ${hasImage ? '' : 'hidden'}">
-      <div class="task-image-title">🖼 Картинка к заданию</div>
-      <img id="task-image" alt="Картинка к заданию для описания">
-      <p id="task-image-hint" class="hint">Рассмотри картинку и опиши её в ответе.</p>
+    <div class="task-header">
+      <span class="badge">Задание ${escapeHTML(task.id)}</span>
+      <h2>${escapeHTML(task.title)}</h2>
     </div>
-    <div class="content-body prewrap">${escapeHTML(task.content)}</div>`;
-  loadTaskImageForStudent(task);
+    <p class="instruction"><em>${escapeHTML(task.instruction)}</em></p>
+    ${imageBlock}
+    <div class="content-body prewrap">${escapeHTML(task.content)}</div>
+  `;
+
+  if (hasImage) loadTaskImageForStudent(task);
   resetTimerLogic();
 }
+
 async function loadTaskImageForStudent(task) {
   const box = document.getElementById('task-image-box');
-  const img = document.getElementById('task-image');
-  const hint = document.getElementById('task-image-hint');
-  if (!box || !img || !task || !task.image || !task.image.fileId || !isAppsScriptConfigured()) {
-    if (box) box.classList.add('hidden');
-    return;
-  }
-  box.classList.remove('hidden');
-  img.removeAttribute('src');
-  hint.textContent = 'Загружаем картинку...';
+  if (!box) return;
+
+  const showImage = (src) => {
+    box.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Картинка к заданию для описания';
+    img.className = 'task-image';
+    box.appendChild(img);
+  };
+
   try {
-    const data = await appsScriptJsonp('getTaskImage', { id: task.id });
-    if (data && data.ok && data.dataUrl) {
-      img.src = data.dataUrl;
-      hint.textContent = 'Рассмотри картинку и опиши её в ответе.';
-    } else {
-      throw new Error(data?.error || 'Картинка не загрузилась');
+    const response = await appsScriptJsonp('getTaskImage', { id: task.id });
+    if (response && response.ok && response.dataUrl) {
+      showImage(response.dataUrl);
+      return;
     }
+    throw new Error(response?.error || 'Картинка не получена');
   } catch (error) {
-    hint.textContent = 'Не удалось загрузить картинку: ' + (error.message || error);
+    if (task.image?.directUrl) {
+      showImage(task.image.directUrl);
+      return;
+    }
+    box.innerHTML = '<div class="image-error">Картинку не удалось загрузить. Нажмите «Обновить задания» или сообщите учителю.</div>';
   }
 }
 function showTask(id) { currentTaskId = String(id); renderTabs(); renderTask(); }
@@ -386,7 +397,7 @@ function collectSubmission() {
   if (!currentAudio) return null;
   const task = getCurrentTask();
   const ext = currentAudio.mimeType.includes('ogg') ? 'ogg' : currentAudio.mimeType.includes('mp4') ? 'm4a' : 'webm';
-  return { app:'saha-exam-v2', type:'student-submission', version:4, id:makeId('work'), createdAt:new Date().toISOString(), status:'sent', student:{ id:currentUser.id, fullName:currentUser.fullName, className:currentUser.className, login:currentUser.login }, task:{ id:task.id, title:task.title, instruction:task.instruction, imageFileId:(task.image&&task.image.fileId)||'' }, note:document.getElementById('student-note').value.trim(), audio:{ fileName:`answer-task-${task.id}.${ext}`, mimeType:currentAudio.mimeType, size:currentAudio.size, dataUrl:currentAudio.dataUrl } };
+  return { app:'saha-exam-v2', type:'student-submission', version:4, id:makeId('work'), createdAt:new Date().toISOString(), status:'sent', student:{ id:currentUser.id, fullName:currentUser.fullName, className:currentUser.className, login:currentUser.login }, task:{ id:task.id, title:task.title, instruction:task.instruction }, note:document.getElementById('student-note').value.trim(), audio:{ fileName:`answer-task-${task.id}.${ext}`, mimeType:currentAudio.mimeType, size:currentAudio.size, dataUrl:currentAudio.dataUrl } };
 }
 async function sendSubmissionToTeacher() {
   if (!currentAudio) return showToast('Сначала запишите ответ', 'error');
