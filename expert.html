@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="sah">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ИУС 2.0 — учитель</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">И</span>
+    <span><strong>ИУС 2.0</strong><small>Кабинет учителя</small></span>
+  </a>
+  <nav class="topnav">
+    <a href="index.html">Ученик</a>
+    <a class="active" href="expert.html">Учитель</a>
+  </nav>
+</header>
+
+<main class="container wide">
+  <section class="hero-card">
+    <div>
+      <p class="eyebrow">Учуутал кабинета</p>
+      <h1>Проверка работ и редактор заданий</h1>
+      <p class="lead">Откройте работу из Google Таблицы, прослушайте аудио, поставьте баллы и изменяйте задания для учеников.</p>
+    </div>
+    <div class="status-card" id="session-status">Вход не выполнен</div>
+  </section>
+
+  <section id="auth-view" class="grid two auth-grid">
+    <div class="panel">
+      <h2>Вход учителя</h2>
+      <label>Логин</label>
+      <input id="login-name" type="text" placeholder="логин учителя" autocomplete="username">
+      <label>Пароль</label>
+      <input id="login-password" type="password" placeholder="пароль" autocomplete="current-password">
+      <button class="primary full" onclick="loginTeacher()">Войти</button>
+    </div>
+    <div class="panel">
+      <h2>Регистрация учителя</h2>
+      <p class="muted">Код учителя: <strong>SAHA2026</strong>. Потом можно поменять в коде.</p>
+      <label>ФИО учителя</label>
+      <input id="reg-fullname" type="text" placeholder="Фамилия Имя Отчество">
+      <label>Логин</label>
+      <input id="reg-login" type="text" placeholder="логин" autocomplete="username">
+      <label>Пароль</label>
+      <input id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password">
+      <label>Код учителя</label>
+      <input id="reg-teacher-code" type="password" placeholder="код доступа">
+      <button class="secondary full" onclick="registerTeacher()">Зарегистрироваться</button>
+    </div>
+  </section>
+
+  <section id="teacher-view" class="hidden">
+    <div class="teacher-head panel compact">
+      <div>
+        <h2 id="teacher-title">Кабинет учителя</h2>
+        <p class="muted">Сначала нажмите «Проверить подключение», затем загрузите работы.</p>
+      </div>
+      <button class="danger-light" onclick="logout()">Выйти</button>
+    </div>
+
+    <div class="grid teacher-grid">
+      <aside class="panel no-print">
+        <h2>1. Google Таблица</h2>
+        <button class="secondary full" onclick="checkConnection()">🔎 Проверить подключение</button>
+        <button class="primary full" onclick="loadSubmissions()">🔄 Показать отправленные работы</button>
+        <div id="teacher-status" class="hint status-line">Нажмите проверку подключения.</div>
+        <div id="submissions-list" class="work-list"></div>
+
+        <h2>2. Аудио</h2>
+        <audio id="student-audio" controls class="full-audio"></audio>
+        <p id="audio-hint" class="hint">После открытия работы здесь появится запись.</p>
+
+        <h2>3. JSON запасной вариант</h2>
+        <label class="file-drop">
+          <input id="submission-file" type="file" accept="application/json,.json" onchange="importSubmission(event)">
+          <span>⬆ Загрузить JSON-файл ответа</span>
+        </label>
+
+        <h2>4. Комментарий учителя</h2>
+        <textarea id="teacher-comment" rows="5" placeholder="Замечания, рекомендации"></textarea>
+      </aside>
+
+      <section class="panel protocol-panel" id="protocol-print-area">
+        <div class="protocol-header">
+          <div>
+            <p class="eyebrow">Боротокуол</p>
+            <h1>Түмүк собеседование сыанабылын боротокуола</h1>
+          </div>
+          <div class="verdict-card" id="verdict">БАРЫТА ТУРУОРУЛЛА ИЛИК</div>
+        </div>
+
+        <div id="import-info" class="result-box hidden"></div>
+
+        <div class="student-form grid three">
+          <label>Ученик<input id="student-name" type="text" placeholder="ФИО ученика"></label>
+          <label>Класс<input id="student-class" type="text" placeholder="8А"></label>
+          <label>Задание<input id="task-title" type="text" placeholder="Задание"></label>
+        </div>
+
+        <div id="criteria-list" class="criteria-list"></div>
+
+        <div class="score-footer">
+          <div><span>Уопсай балл</span><strong><span id="total-score">0</span> / 16</strong></div>
+          <div><span>Дата проверки</span><strong id="check-date"></strong></div>
+        </div>
+
+        <div class="print-comment">
+          <h3>Комментарий учителя</h3>
+          <p id="print-comment-text">—</p>
+        </div>
+
+        <div class="buttons no-print protocol-actions">
+          <button class="secondary" onclick="saveCheckResult()">💾 Сохранить результат</button>
+          <button class="primary" onclick="exportProtocol()">⬇ Скачать протокол</button>
+          <button onclick="window.print()">🖨 Печать</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel no-print task-editor-panel">
+      <h2>Редактор заданий для ученика</h2>
+      <p class="muted">Задания сохраняются в лист <strong>tasks</strong> Google Таблицы. После сохранения ученик нажимает «Обновить задания» или Ctrl+F5.</p>
+      <div class="grid task-editor-grid">
+        <aside>
+          <button class="secondary full" onclick="loadTasksForEdit()">🔄 Загрузить задания</button>
+          <div id="task-list" class="work-list"></div>
+        </aside>
+        <div class="editor-form">
+          <label>ID задания</label>
+          <input id="edit-task-id" type="text" placeholder="1">
+          <label>Название вкладки</label>
+          <input id="edit-task-tab" type="text" placeholder="1 сорудах / Ааҕыы">
+          <label>Полное название</label>
+          <input id="edit-task-title" type="text" placeholder="1 сорудах. Тиэкиһи ааҕыы">
+          <div class="grid two">
+            <label>Подготовка, сек.<input id="edit-task-prep" type="number" min="0" value="60"></label>
+            <label>Ответ, сек.<input id="edit-task-answer" type="number" min="10" value="180"></label>
+          </div>
+          <label>Инструкция</label>
+          <textarea id="edit-task-instruction" rows="3"></textarea>
+          <label>Текст / вопросы / тема</label>
+          <textarea id="edit-task-content" rows="10"></textarea>
+
+          <label>Картинка для описания</label>
+          <div class="image-upload-box">
+            <input id="edit-task-image-file" type="file" accept="image/*" onchange="previewTaskImageFile(event)">
+            <img id="edit-task-image-preview" class="task-image-preview hidden" alt="Картинка задания">
+            <div id="edit-task-image-status" class="hint">Можно загрузить картинку, чтобы ученик описал её в задании.</div>
+            <div class="buttons stacked">
+              <button class="secondary full" onclick="uploadTaskImageFromEditor()">🖼 Загрузить картинку к заданию</button>
+              <button class="ghost full" onclick="clearTaskImageFromEditor()">Убрать картинку</button>
+            </div>
+          </div>
+
+          <button class="primary full" onclick="saveTaskFromEditor()">💾 Сохранить задание</button>
+          <div id="task-editor-status" class="hint"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="apps-script-config.js"></script>
+<script>
+const TEACHER_CODE = 'SAHA2026';
+const USERS_KEY = 'saha_exam_users_v3_clean';
+const SESSION_KEY = 'saha_exam_session_v3_clean';
+const RESULTS_KEY = 'saha_exam_results_v3_clean';
+let currentUser = null;
+let currentSubmission = null;
+let editableTasks = [];
+
+const criteria = [
+  { group:'1 сорудах. Тэкиһи ааҕыы (ИЧ)', items:[{code:'ИЧ1',text:'Ааҕыы интонацията сөп түбэһэр',score:1},{code:'ИЧ2',text:'Тэми батыһан сөпкө ааҕыы',score:1}]},
+  { group:'2 сорудах. Тэкиһи кэпсээһин (ИП)', items:[{code:'ИП1',text:'Сүрүн санаалары барытын эттэ',score:2},{code:'ИП2',text:'Сыыһа өйдөбүлү киллэрбэтэ',score:1},{code:'ИП3',text:'Цитатаны сөпкө туттубут',score:1},{code:'ИП4',text:'Цитатаны уган кэпсииригэр сыыспыта суох',score:1}]},
+  { group:'3 сорудах. Монолог (ИМ)', items:[{code:'ИМ1',text:'Сорудаҕы толордо, 10-тан тахса этии',score:1},{code:'ИМ2',text:'Этиилэр логика өттүнэн сөптөр',score:1},{code:'ИМ3',text:'Тыл арааһын сөпкө туттуу',score:1}]},
+  { group:'4 сорудах. Диалог (ИД)', items:[{code:'ИД1',text:'Ыйытыыларга толору хоруйдаата',score:1},{code:'ИД2',text:'Саҥарар култууратын тутуста',score:1}]},
+  { group:'Саҥа таба иһиллиитэ уонна грамотноһа (Р)', items:[{code:'Р1',text:'Грамматика сыыһата суох',score:1},{code:'Р2',text:'Тыллары сөпкө туттуу',score:1},{code:'Р3',text:'Орфоэпия сыыһата суох',score:1},{code:'Р4',text:'Тыл ситимэ сөпкө тутуллубут',score:1},{code:'Р5',text:'Саҥарыы тэмигэр сыыһа суох',score:1}]}
+];
+
+function getAppsScriptUrl(){ const raw=String(window.APPS_SCRIPT_WEB_APP_URL||'').trim(); return raw ? raw.replace(/\/dev(\?.*)?$/,'/exec').replace(/\?.*$/,'') : ''; }
+function isAppsScriptConfigured(){ const url=getAppsScriptUrl(); return Boolean(url && url.startsWith('https://script.google.com/')); }
+function appsScriptJsonp(action, params={}){ return new Promise((resolve,reject)=>{ if(!isAppsScriptConfigured()) return reject(new Error('Apps Script не настроен')); const cb='iusCb_'+Date.now()+'_'+Math.random().toString(36).slice(2); const q=new URLSearchParams({action,callback:cb,_:Date.now().toString(),...params}); const s=document.createElement('script'); const cleanup=()=>{delete window[cb];s.remove();}; window[cb]=data=>{cleanup();resolve(data);}; s.onerror=()=>{cleanup();reject(new Error('Не удалось получить ответ Apps Script'));}; s.src=getAppsScriptUrl()+'?'+q.toString(); document.body.appendChild(s); }); }
+function postToAppsScriptByForm(payload){ return new Promise((resolve,reject)=>{ if(!isAppsScriptConfigured()) return reject(new Error('Apps Script не настроен')); const iframeName='iusFrame_'+Date.now(); const iframe=document.createElement('iframe'); iframe.name=iframeName; iframe.style.display='none'; const form=document.createElement('form'); form.method='POST'; form.action=getAppsScriptUrl(); form.target=iframeName; form.enctype='application/x-www-form-urlencoded'; form.style.display='none'; const input=document.createElement('input'); input.type='hidden'; input.name='payload'; input.value=JSON.stringify(payload); form.appendChild(input); let done=false; const cleanup=()=>setTimeout(()=>{form.remove();iframe.remove();},1000); iframe.onload=()=>{if(done)return;done=true;cleanup();resolve();}; document.body.appendChild(iframe); document.body.appendChild(form); form.submit(); setTimeout(()=>{if(!done){done=true;cleanup();resolve();}},4500); }); }
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function getUsers(){return JSON.parse(localStorage.getItem(USERS_KEY)||'[]');}
+function saveUsers(users){localStorage.setItem(USERS_KEY,JSON.stringify(users));}
+async function hashPassword(value){ if(window.crypto&&crypto.subtle){ const data=new TextEncoder().encode(value); const hash=await crypto.subtle.digest('SHA-256',data); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); } return btoa(unescape(encodeURIComponent(value))); }
+function makeId(prefix){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);}
+function showToast(message,type='ok'){const t=document.getElementById('toast');t.textContent=message;t.className='toast '+type;setTimeout(()=>t.className='toast hidden',3500);}
+function setStatus(message,type=''){const el=document.getElementById('teacher-status');el.textContent=message;el.className='hint status-line '+type;}
+async function registerTeacher(){ const fullName=document.getElementById('reg-fullname').value.trim(); const login=document.getElementById('reg-login').value.trim().toLowerCase(); const password=document.getElementById('reg-password').value; const code=document.getElementById('reg-teacher-code').value.trim(); if(!fullName||!login||!password)return showToast('Заполните все поля','error'); if(password.length<4)return showToast('Пароль минимум 4 символа','error'); if(code!==TEACHER_CODE)return showToast('Неверный код учителя','error'); const users=getUsers(); if(users.some(u=>u.login===login))return showToast('Такой логин уже есть','error'); const user={id:makeId('teacher'),role:'teacher',fullName,login,passwordHash:await hashPassword(password),createdAt:new Date().toISOString()}; users.push(user); saveUsers(users); localStorage.setItem(SESSION_KEY,JSON.stringify({userId:user.id})); startSession(user); }
+async function loginTeacher(){ const login=document.getElementById('login-name').value.trim().toLowerCase(); const passwordHash=await hashPassword(document.getElementById('login-password').value); const user=getUsers().find(u=>u.login===login&&u.role==='teacher'&&u.passwordHash===passwordHash); if(!user)return showToast('Логин или пароль неверный','error'); localStorage.setItem(SESSION_KEY,JSON.stringify({userId:user.id})); startSession(user); }
+function restoreSession(){const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); if(!s)return; const u=getUsers().find(x=>x.id===s.userId); if(u&&u.role==='teacher') startSession(u);}
+function startSession(user){ currentUser=user; document.getElementById('auth-view').classList.add('hidden'); document.getElementById('teacher-view').classList.remove('hidden'); document.getElementById('session-status').textContent=user.fullName; document.getElementById('teacher-title').textContent='Кабинет учителя: '+user.fullName; renderCriteria(); createBlankProtocol(); setDate(); }
+function logout(){localStorage.removeItem(SESSION_KEY);location.reload();}
+function renderCriteria(){ const list=document.getElementById('criteria-list'); list.innerHTML=criteria.map(g=>`<section class="criteria-group"><h3>${escapeHTML(g.group)}</h3>${g.items.map(item=>`<label class="criterion"><input type="checkbox" class="score" data-code="${item.code}" data-score="${item.score}" onchange="calcTotal()"><span><strong>${item.code}</strong> ${escapeHTML(item.text)}</span><em>${item.score}</em></label>`).join('')}</section>`).join(''); calcTotal(); }
+function calcTotal(){ let total=0; document.querySelectorAll('.score').forEach(b=>{if(b.checked)total+=Number(b.dataset.score||0);}); document.getElementById('total-score').textContent=total; const v=document.getElementById('verdict'); if(total>=10){v.textContent='ЗАЧЁТ 🎉';v.className='verdict-card ok';} else if(total===0){v.textContent='БАРЫТА ТУРУОРУЛЛА ИЛИК';v.className='verdict-card';} else {v.textContent='НЕЗАЧЁТ ❌';v.className='verdict-card bad';} refreshProtocol(); }
+function setDate(){document.getElementById('check-date').textContent=new Date().toLocaleDateString('ru-RU');}
+function refreshProtocol(){ setDate(); const c=document.getElementById('teacher-comment').value.trim(); document.getElementById('print-comment-text').textContent=c||'—'; }
+document.addEventListener('input', e=>{if(e.target&&e.target.id==='teacher-comment')refreshProtocol();});
+async function checkConnection(){ setStatus('Проверяем...'); try{ const data=await appsScriptJsonp('diagnose'); if(!data||!data.ok)throw new Error(data?.error||'Ошибка'); const d=data.diagnose||{}; setStatus(`Подключено. works: ${d.worksSheet?'да':'нет'}, tasks: ${d.tasksSheet?'да':'нет'}, Drive: ${d.drive?'да':'нет'}.`, d.drive?'':'warn'); showToast('Подключение проверено'); }catch(e){setStatus('Ошибка подключения: '+(e.message||e),'error');} }
+async function loadSubmissions(){ const list=document.getElementById('submissions-list'); list.innerHTML=''; setStatus('Загружаем работы...'); try{ const data=await appsScriptJsonp('list',{limit:'50'}); if(!data||!data.ok)throw new Error(data?.error||'Ошибка'); const items=data.items||[]; if(!items.length){setStatus('Пока нет отправленных работ.');return;} setStatus('Найдено работ: '+items.length); list.innerHTML=items.map(item=>`<div class="work-card"><strong>${escapeHTML(item.student?.fullName||'Без имени')}</strong><span>${escapeHTML(item.student?.className||'—')} · ${escapeHTML(item.task?.title||'Задание')} · ${formatDateTime(item.sentAt)}</span><em>${escapeHTML(item.status||'sent')}</em>${item.audioError?`<small class="error-text">Ошибка аудио: ${escapeHTML(item.audioError)}</small>`:''}<button class="ghost full" onclick="openSubmission('${escapeAttr(item.id)}')">Открыть работу</button></div>`).join(''); }catch(e){setStatus('Не удалось загрузить работы: '+(e.message||e),'error');} }
+async function openSubmission(id){ try{ const data=await appsScriptJsonp('get',{id}); if(!data||!data.ok||!data.item)throw new Error(data?.error||'Работа не найдена'); const item=data.item; item.appsScriptId=id; applySubmissionData(item,'Работа из общей Google Таблицы'); await loadAudioForSubmission(item); }catch(e){showToast('Не удалось открыть работу: '+(e.message||e),'error');} }
+async function loadAudioForSubmission(item){ const audio=document.getElementById('student-audio'); const hint=document.getElementById('audio-hint'); audio.removeAttribute('src'); if(!item.audio||!item.audio.fileId){hint.textContent='У работы нет audioFileId. '+(item.audioError||''); return;} hint.textContent='Загружаем аудио из Google Drive...'; try{ const response=await appsScriptJsonp('getAudio',{id:item.id}); if(response&&response.ok&&response.dataUrl){audio.src=response.dataUrl; hint.textContent='Аудио загружено. Нажмите Play.'; return;} throw new Error(response?.error||'Не удалось получить аудио'); }catch(e){ hint.textContent='Не удалось загрузить аудио через Apps Script. Пробуем прямую ссылку Drive.'; if(item.audio.directUrl){ audio.src=item.audio.directUrl; } showToast('Проверьте доступ DriveApp или audioFileId','warn'); } }
+function applySubmissionData(data,source){ currentSubmission=data; document.getElementById('student-name').value=data.student?.fullName||''; document.getElementById('student-class').value=data.student?.className||''; document.getElementById('task-title').value=data.task?.title||''; const box=document.getElementById('import-info'); box.classList.remove('hidden'); box.textContent=[source,`Ученик: ${data.student?.fullName||'—'}`,`Класс: ${data.student?.className||'—'}`,`Задание: ${data.task?.title||'—'}`,`Отправлено: ${formatDateTime(data.sentAt||data.createdAt)}`,`Комментарий ученика: ${data.note||'—'}`,data.audioError?`Ошибка аудио: ${data.audioError}`:''].filter(Boolean).join('\n'); clearScores(); refreshProtocol(); }
+function importSubmission(event){ const file=event.target.files[0]; if(!file)return; const r=new FileReader(); r.onload=()=>{try{const data=JSON.parse(r.result); applySubmissionData(data,'Работа из JSON-файла'); const audio=document.getElementById('student-audio'); if(data.audio?.dataUrl){audio.src=data.audio.dataUrl; document.getElementById('audio-hint').textContent='Аудио из JSON загружено.';} }catch(e){showToast('Не удалось прочитать JSON','error');}}; r.readAsText(file,'utf-8'); }
+function createBlankProtocol(){ currentSubmission=null; document.getElementById('student-name').value=''; document.getElementById('student-class').value=''; document.getElementById('task-title').value=''; document.getElementById('student-audio').removeAttribute('src'); document.getElementById('audio-hint').textContent='После открытия работы здесь появится запись.'; document.getElementById('import-info').classList.add('hidden'); document.getElementById('teacher-comment').value=''; clearScores(); refreshProtocol(); }
+function clearScores(){document.querySelectorAll('.score').forEach(b=>b.checked=false); calcTotal();}
+function collectResult(){ const selected=Array.from(document.querySelectorAll('.score')).filter(b=>b.checked).map(b=>({code:b.dataset.code,score:Number(b.dataset.score)})); const total=selected.reduce((s,i)=>s+i.score,0); return {app:'saha-exam-v2',type:'teacher-result',id:makeId('result'),checkedAt:new Date().toISOString(),teacher:{id:currentUser.id,fullName:currentUser.fullName,login:currentUser.login},student:{fullName:document.getElementById('student-name').value.trim(),className:document.getElementById('student-class').value.trim()},taskTitle:document.getElementById('task-title').value.trim(),selected,total,maxTotal:16,verdict:total>=10?'ЗАЧЁТ':'НЕЗАЧЁТ',teacherComment:document.getElementById('teacher-comment').value.trim(),sourceAppsScriptId:currentSubmission?.appsScriptId||currentSubmission?.id||null}; }
+async function saveCheckResult(){ const result=collectResult(); if(!result.student.fullName)return showToast('Укажите ФИО ученика','error'); localStorage.setItem(RESULTS_KEY,JSON.stringify([result,...JSON.parse(localStorage.getItem(RESULTS_KEY)||'[]')].slice(0,50))); if(result.sourceAppsScriptId&&isAppsScriptConfigured()){ try{ await postToAppsScriptByForm({action:'saveResult',submissionId:result.sourceAppsScriptId,result}); showToast('Результат сохранён'); loadSubmissions(); return; }catch(e){showToast('Сохранено в браузере, но не в таблице','warn');return;} } showToast('Результат сохранён в браузере'); }
+function exportProtocol(){ const result=collectResult(); if(!result.student.fullName)return showToast('Укажите ФИО ученика','error'); const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Протокол</title><style>body{font-family:Arial;padding:30px;line-height:1.5}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:7px}.total{font-size:22px;font-weight:bold}</style></head><body><h1>Түмүк собеседование сыанабылын боротокуола</h1><p><b>Ученик:</b> ${escapeHTML(result.student.fullName)}</p><p><b>Класс:</b> ${escapeHTML(result.student.className||'—')}</p><p><b>Задание:</b> ${escapeHTML(result.taskTitle||'—')}</p><p><b>Учитель:</b> ${escapeHTML(result.teacher.fullName)}</p><table><tr><th>Критерий</th><th>Балл</th></tr>${criteria.flatMap(g=>g.items).map(item=>`<tr><td>${item.code} — ${escapeHTML(item.text)}</td><td>${result.selected.find(s=>s.code===item.code)?item.score:0}</td></tr>`).join('')}</table><p class="total">Итого: ${result.total} / 16</p><h2>${result.verdict}</h2><h3>Комментарий</h3><p>${escapeHTML(result.teacherComment||'—')}</p></body></html>`; downloadFile(html,`протокол_${(result.student.fullName||'student').replace(/[^А-Яа-яA-Za-z0-9_-]+/g,'_')}.html`,'text/html;charset=utf-8'); }
+function downloadFile(content,filename,type){const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);}
+async function loadTasksForEdit(){ const box=document.getElementById('task-list'); box.innerHTML='Загружаем...'; try{ const data=await appsScriptJsonp('listTasks'); if(!data||!data.ok)throw new Error(data?.error||'Ошибка'); editableTasks=data.tasks||[]; box.innerHTML=editableTasks.map(t=>`<div class="work-card"><strong>${escapeHTML(t.id)}. ${escapeHTML(t.title)}</strong><span>${escapeHTML(t.tabTitle||'')}${t.image&&t.image.fileId?' · 🖼 картинка есть':''}</span><button class="ghost full" onclick="editTask('${escapeAttr(t.id)}')">Редактировать</button></div>`).join(''); if(editableTasks[0]) editTask(editableTasks[0].id); }catch(e){box.innerHTML='<p class="error-text">Не удалось загрузить задания: '+escapeHTML(e.message||e)+'</p>';} }
+function editTask(id){ const t=editableTasks.find(x=>String(x.id)===String(id)); if(!t)return; document.getElementById('edit-task-id').value=t.id; document.getElementById('edit-task-tab').value=t.tabTitle||''; document.getElementById('edit-task-title').value=t.title||''; document.getElementById('edit-task-prep').value=t.prepSeconds||0; document.getElementById('edit-task-answer').value=t.answerSeconds||180; document.getElementById('edit-task-instruction').value=t.instruction||''; document.getElementById('edit-task-content').value=t.content||''; const file=document.getElementById('edit-task-image-file'); if(file) file.value=''; loadTaskImagePreview(t); }
+async function saveTaskFromEditor(){ const status=document.getElementById('task-editor-status'); const task={id:document.getElementById('edit-task-id').value.trim(),tabTitle:document.getElementById('edit-task-tab').value.trim(),title:document.getElementById('edit-task-title').value.trim(),prepSeconds:Number(document.getElementById('edit-task-prep').value||0),answerSeconds:Number(document.getElementById('edit-task-answer').value||180),instruction:document.getElementById('edit-task-instruction').value,content:document.getElementById('edit-task-content').value}; if(!task.id||!task.title)return showToast('Заполните ID и название','error'); status.textContent='Сохраняем...'; try{ await postToAppsScriptByForm({action:'saveTask',task}); await sleep(1200); const file=document.getElementById('edit-task-image-file')?.files?.[0]; if(file){ await uploadTaskImageFromEditor(false); } status.textContent='Задание сохранено. Ученик должен обновить задания.'; showToast('Задание сохранено'); loadTasksForEdit(); }catch(e){status.textContent='Ошибка: '+(e.message||e); showToast('Не удалось сохранить задание','error');} }
+function previewTaskImageFile(event){ const file=event.target.files&&event.target.files[0]; const img=document.getElementById('edit-task-image-preview'); const status=document.getElementById('edit-task-image-status'); if(!file){ img.classList.add('hidden'); return; } if(!file.type.startsWith('image/')){ status.textContent='Выберите файл изображения.'; return; } const url=URL.createObjectURL(file); img.src=url; img.classList.remove('hidden'); status.textContent='Выбрана новая картинка: '+file.name+'. Нажмите «Загрузить картинку» или «Сохранить задание».'; }
+function loadTaskImagePreview(task){ const img=document.getElementById('edit-task-image-preview'); const status=document.getElementById('edit-task-image-status'); img.removeAttribute('src'); img.classList.add('hidden'); if(!task||!task.image||!task.image.fileId){ status.textContent='Картинка не загружена. Можно выбрать файл изображения.'; return; } status.textContent='Загружаем текущую картинку...'; appsScriptJsonp('getTaskImage',{id:task.id}).then(data=>{ if(data&&data.ok&&data.dataUrl){ img.src=data.dataUrl; img.classList.remove('hidden'); status.textContent='Текущая картинка загружена. Можно заменить новой.'; } else { status.textContent='Картинка есть в таблице, но не загрузилась: '+(data?.error||''); } }).catch(e=>{ status.textContent='Не удалось показать картинку: '+(e.message||e); }); }
+async function uploadTaskImageFromEditor(showDone=true){ const taskId=document.getElementById('edit-task-id').value.trim(); const file=document.getElementById('edit-task-image-file').files[0]; const status=document.getElementById('edit-task-image-status'); if(!taskId)return showToast('Сначала укажите ID задания','error'); if(!file)return showToast('Сначала выберите картинку','error'); try{ status.textContent='Готовим и загружаем картинку...'; const image=await fileToResizedImageDataUrl(file,1200,0.82); await postToAppsScriptByForm({action:'uploadTaskImage',taskId,image}); await sleep(1800); status.textContent='Картинка загружена. Ученик увидит её после обновления заданий.'; if(showDone) showToast('Картинка загружена'); const data=await appsScriptJsonp('listTasks'); if(data&&data.ok){ editableTasks=data.tasks||[]; const t=editableTasks.find(x=>String(x.id)===String(taskId)); if(t) loadTaskImagePreview(t); } }catch(e){ status.textContent='Ошибка загрузки картинки: '+(e.message||e); showToast('Не удалось загрузить картинку','error'); } }
+async function clearTaskImageFromEditor(){ const taskId=document.getElementById('edit-task-id').value.trim(); const status=document.getElementById('edit-task-image-status'); if(!taskId)return showToast('Сначала укажите ID задания','error'); try{ status.textContent='Удаляем картинку из задания...'; await postToAppsScriptByForm({action:'clearTaskImage',taskId}); await sleep(1200); document.getElementById('edit-task-image-file').value=''; document.getElementById('edit-task-image-preview').classList.add('hidden'); status.textContent='Картинка убрана из задания.'; showToast('Картинка убрана'); loadTasksForEdit(); }catch(e){ status.textContent='Ошибка: '+(e.message||e); } }
+function fileToResizedImageDataUrl(file,maxSize=1200,quality=0.82){ return new Promise((resolve,reject)=>{ const reader=new FileReader(); reader.onerror=reject; reader.onload=()=>{ const image=new Image(); image.onerror=reject; image.onload=()=>{ let w=image.width,h=image.height; const scale=Math.min(1,maxSize/Math.max(w,h)); w=Math.round(w*scale); h=Math.round(h*scale); const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d'); ctx.drawImage(image,0,0,w,h); const dataUrl=canvas.toDataURL('image/jpeg',quality); resolve({dataUrl,mimeType:'image/jpeg',fileName:file.name.replace(/\.[^.]+$/,'')+'.jpg',originalSize:file.size}); }; image.src=reader.result; }; reader.readAsDataURL(file); }); }
+function formatDateTime(v){if(!v)return'—'; try{return new Date(v).toLocaleString('ru-RU');}catch(e){return'—';}}
+function escapeHTML(v){return String(v??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
+function escapeAttr(v){return String(v??'').replace(/[\\']/g,'\\$&').replace(/</g,'&lt;');}
+restoreSession();
+</script>
+</body>
+</html>

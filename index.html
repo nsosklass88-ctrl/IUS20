@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="sah">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ИУС 2.0 — ученик</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">И</span>
+    <span><strong>ИУС 2.0</strong><small>Кабинет ученика</small></span>
+  </a>
+  <nav class="topnav">
+    <a class="active" href="index.html">Ученик</a>
+    <a href="expert.html">Учитель</a>
+  </nav>
+</header>
+
+<main class="container wide">
+  <section class="hero-card">
+    <div>
+      <p class="eyebrow">Саха тыла · сэһэргэһии</p>
+      <h1>Запись устного ответа ученика</h1>
+      <p class="lead">Выберите задание, подготовьтесь, запишите ответ и отправьте работу учителю в Google Таблицу.</p>
+    </div>
+    <div class="status-card" id="session-status">Вход не выполнен</div>
+  </section>
+
+  <section id="auth-view" class="grid two auth-grid">
+    <div class="panel">
+      <h2>Вход ученика</h2>
+      <label>Логин</label>
+      <input id="login-name" type="text" placeholder="например: kolya5a" autocomplete="username">
+      <label>Пароль</label>
+      <input id="login-password" type="password" placeholder="пароль" autocomplete="current-password">
+      <button class="primary full" onclick="loginUser()">Войти</button>
+      <p class="hint">Аккаунты хранятся только в этом браузере. Для проверки проекта этого достаточно.</p>
+    </div>
+    <div class="panel">
+      <h2>Регистрация ученика</h2>
+      <label>ФИО</label>
+      <input id="reg-fullname" type="text" placeholder="Фамилия Имя">
+      <label>Класс</label>
+      <input id="reg-class" type="text" placeholder="например: 8А">
+      <label>Логин</label>
+      <input id="reg-login" type="text" placeholder="латиницей без пробелов" autocomplete="username">
+      <label>Пароль</label>
+      <input id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password">
+      <button class="secondary full" onclick="registerUser()">Зарегистрироваться</button>
+    </div>
+  </section>
+
+  <section id="student-view" class="hidden">
+    <div class="student-head panel compact">
+      <div>
+        <h2 id="student-title">Кабинет ученика</h2>
+        <p class="muted" id="student-subtitle"></p>
+      </div>
+      <div class="student-actions">
+        <button class="ghost" onclick="loadTasks(true)">🔄 Обновить задания</button>
+        <button class="ghost" onclick="resetStudentProgress()">Сбросить</button>
+        <button class="danger-light" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+
+    <div id="tabs" class="tabs" role="tablist" aria-label="Задания"></div>
+
+    <div class="grid main-grid">
+      <article id="task-content" class="task-box"></article>
+
+      <aside class="controls-box">
+        <div class="timer-card">
+          <span id="timer-label">Бэлэмнэнии кэмэ</span>
+          <strong id="time">01:00</strong>
+        </div>
+        <div class="buttons stacked">
+          <button id="timer-btn" onclick="toggleTimer()">▶ Запустить таймер</button>
+          <button id="ready-record-btn" class="ready-btn" onclick="startAnswerNow()">✅ Готов — начать запись</button>
+          <button id="record-btn" class="record-off" onclick="toggleRecording()" disabled>🎙 Начать запись</button>
+        </div>
+        <p id="record-status" class="muted center">Можно ждать таймер или нажать «Готов — начать запись».</p>
+
+        <div id="audio-playback-container" class="hidden result-box">
+          <h3>Ответ записан</h3>
+          <audio id="audio-playback" controls></audio>
+          <label>Комментарий ученика</label>
+          <textarea id="student-note" rows="4" placeholder="Комментарий для учителя"></textarea>
+          <button id="send-submission-btn" class="primary full" onclick="sendSubmissionToTeacher()">📤 Отправить работу учителю</button>
+          <button class="ghost full" onclick="downloadSubmission()">⬇ Скачать JSON запасной вариант</button>
+          <p id="apps-script-status" class="hint"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="apps-script-config.js"></script>
+<script>
+const USERS_KEY = 'saha_exam_users_v3_clean';
+const SESSION_KEY = 'saha_exam_session_v3_clean';
+const APPS_SCRIPT_FALLBACK_MESSAGE = 'Apps Script не настроен. Проверьте apps-script-config.js';
+
+let tasks = [];
+let currentTaskId = '1';
+let timer = null;
+let timeLeft = 60;
+let isPreparing = true;
+let mediaRecorder = null;
+let audioChunks = [];
+let currentAudio = null;
+let currentUser = null;
+let activeStream = null;
+
+const fallbackTasks = [
+  {id:'1', tabTitle:'1 сорудах\nАаҕыы', title:'1 сорудах. Тиэкиһи ааҕыы', prepSeconds:60, answerSeconds:120, instruction:'Тиэкиһи болҕойон аах. 1 мүнүүтэ бэлэмнэн.', content:'Саха сылгыта – тымныыны тулуйар дьикти боруода.\n\nСаха сылгыта – аан дойдуга саамай тымныыны тулуйар дьиэ кыыла. Бу сылгылар тоҕус ый устата аһаҕас халлаан анныгар сылдьаллар, сиртэн-буортан астарын булуналлар.'},
+  {id:'2', tabTitle:'2 сорудах\nКэпсээһин', title:'2 сорудах. Тиэкиһи кэпсээһин', prepSeconds:60, answerSeconds:180, instruction:'Аахпыт тиэкискин сиһилии кэпсээ.', content:'Кэпсээһин: сүрүн санааны, уратыны, түмүгү кэпсээ.'},
+  {id:'3', tabTitle:'3 сорудах\nСэһэргээһии', title:'3 сорудах. Сэһэргээһии', prepSeconds:60, answerSeconds:180, instruction:'Тиэмэттэн биирин талан кэпсээҥ.', content:'1. Хартыынаны ойуулааһын.\n2. Проблемнай тиэмэ: Саха тыла — төрүт тыл.\n3. Олоххо буолбут түгэн.'},
+  {id:'4', tabTitle:'4 сорудах\nКэпсэтии', title:'4 сорудах. Ыйытыыларга эппиэттээһин', prepSeconds:0, answerSeconds:180, instruction:'Ыйытыыларга толору хоруйу биэр.', content:'1. Саха тылын хайдах харыстыахха сөбүй?\n2. Оскуола хайдах көмөлөһүөн сөбүй?'}
+];
+
+function getAppsScriptUrl() {
+  const rawUrl = String(window.APPS_SCRIPT_WEB_APP_URL || '').trim();
+  if (!rawUrl) return '';
+  return rawUrl.replace(/\/dev(\?.*)?$/, '/exec').replace(/\?.*$/, '');
+}
+function isAppsScriptConfigured() {
+  const url = getAppsScriptUrl();
+  return Boolean(url && url.startsWith('https://script.google.com/'));
+}
+function appsScriptJsonp(action, params = {}) {
+  return new Promise((resolve, reject) => {
+    if (!isAppsScriptConfigured()) return reject(new Error(APPS_SCRIPT_FALLBACK_MESSAGE));
+    const callbackName = 'iusCb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const query = new URLSearchParams({ action, callback: callbackName, _: Date.now().toString(), ...params });
+    const script = document.createElement('script');
+    const cleanup = () => { delete window[callbackName]; script.remove(); };
+    window[callbackName] = data => { cleanup(); resolve(data); };
+    script.onerror = () => { cleanup(); reject(new Error('Не удалось получить ответ Apps Script')); };
+    script.src = getAppsScriptUrl() + '?' + query.toString();
+    document.body.appendChild(script);
+  });
+}
+function postToAppsScriptByForm(payload) {
+  return new Promise((resolve, reject) => {
+    if (!isAppsScriptConfigured()) return reject(new Error(APPS_SCRIPT_FALLBACK_MESSAGE));
+    const iframeName = 'iusSubmitFrame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = getAppsScriptUrl();
+    form.target = iframeName;
+    form.enctype = 'application/x-www-form-urlencoded';
+    form.style.display = 'none';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    let finished = false;
+    const cleanup = () => setTimeout(() => { form.remove(); iframe.remove(); }, 1000);
+    iframe.onload = () => { if (finished) return; finished = true; cleanup(); resolve(); };
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(() => { if (!finished) { finished = true; cleanup(); resolve(); } }, 4500);
+  });
+}
+async function postAndVerify(payload, workId) {
+  await postToAppsScriptByForm(payload);
+  for (let i = 0; i < 6; i++) {
+    await sleep(1000);
+    try {
+      const check = await appsScriptJsonp('get', { id: workId });
+      if (check && check.ok && check.item) return check.item;
+    } catch (e) {}
+  }
+  throw new Error('Работа не появилась в таблице. Проверьте Apps Script');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function getUsers() { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
+function saveUsers(users) { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+async function hashPassword(value) {
+  if (window.crypto && crypto.subtle) {
+    const data = new TextEncoder().encode(value);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  return btoa(unescape(encodeURIComponent(value)));
+}
+function makeId(prefix) { return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
+function showToast(message, type = 'ok') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast ' + type;
+  setTimeout(() => toast.className = 'toast hidden', 3500);
+}
+async function registerUser() {
+  const fullName = document.getElementById('reg-fullname').value.trim();
+  const className = document.getElementById('reg-class').value.trim();
+  const login = document.getElementById('reg-login').value.trim().toLowerCase();
+  const password = document.getElementById('reg-password').value;
+  if (!fullName || !className || !login || !password) return showToast('Заполните все поля', 'error');
+  if (password.length < 4) return showToast('Пароль минимум 4 символа', 'error');
+  const users = getUsers();
+  if (users.some(u => u.login === login)) return showToast('Такой логин уже есть', 'error');
+  const user = { id: makeId('student'), role:'student', fullName, className, login, passwordHash: await hashPassword(password), createdAt: new Date().toISOString() };
+  users.push(user); saveUsers(users);
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: user.id }));
+  startSession(user);
+}
+async function loginUser() {
+  const login = document.getElementById('login-name').value.trim().toLowerCase();
+  const passwordHash = await hashPassword(document.getElementById('login-password').value);
+  const user = getUsers().find(u => u.login === login && u.passwordHash === passwordHash && u.role === 'student');
+  if (!user) return showToast('Логин или пароль неверный', 'error');
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: user.id }));
+  startSession(user);
+}
+function restoreSession() {
+  const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+  if (!session) return;
+  const user = getUsers().find(u => u.id === session.userId);
+  if (user && user.role === 'student') startSession(user);
+}
+async function startSession(user) {
+  currentUser = user;
+  document.getElementById('auth-view').classList.add('hidden');
+  document.getElementById('student-view').classList.remove('hidden');
+  document.getElementById('session-status').textContent = `${user.fullName} · ${user.className}`;
+  document.getElementById('student-title').textContent = `Кабинет ученика: ${user.fullName}`;
+  document.getElementById('student-subtitle').textContent = `Класс: ${user.className}. Запишите и отправьте работу учителю.`;
+  await loadTasks(false);
+  updateAppsScriptStatus();
+}
+function logout() { localStorage.removeItem(SESSION_KEY); location.reload(); }
+async function loadTasks(manual) {
+  try {
+    if (!isAppsScriptConfigured()) throw new Error(APPS_SCRIPT_FALLBACK_MESSAGE);
+    const data = await appsScriptJsonp('listTasks');
+    if (!data || !data.ok || !data.tasks || !data.tasks.length) throw new Error(data?.error || 'Задания не найдены');
+    tasks = data.tasks;
+    if (manual) showToast('Задания обновлены');
+  } catch (error) {
+    tasks = fallbackTasks;
+    if (manual) showToast('Не удалось загрузить задания из таблицы, включены встроенные', 'warn');
+  }
+  currentTaskId = String(tasks[0]?.id || '1');
+  renderTabs();
+  renderTask();
+}
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = tasks.map(task => `<button class="tab-btn ${String(task.id) === String(currentTaskId) ? 'active' : ''}" onclick="showTask('${escapeAttr(task.id)}')">${escapeHTML(task.tabTitle || task.title).replace(/\n/g, '<br>')}</button>`).join('');
+}
+function getCurrentTask() { return tasks.find(t => String(t.id) === String(currentTaskId)) || tasks[0] || fallbackTasks[0]; }
+function renderTask() {
+  const task = getCurrentTask();
+  const hasImage = Boolean(task.image && task.image.fileId);
+  document.getElementById('task-content').innerHTML = `
+    <div class="task-header"><span class="badge">Задание ${escapeHTML(task.id)}</span><h2>${escapeHTML(task.title)}</h2></div>
+    <p class="instruction"><em>${escapeHTML(task.instruction)}</em></p>
+    <div id="task-image-box" class="task-image-box ${hasImage ? '' : 'hidden'}">
+      <div class="task-image-title">🖼 Картинка к заданию</div>
+      <img id="task-image" alt="Картинка к заданию для описания">
+      <p id="task-image-hint" class="hint">Рассмотри картинку и опиши её в ответе.</p>
+    </div>
+    <div class="content-body prewrap">${escapeHTML(task.content)}</div>`;
+  loadTaskImageForStudent(task);
+  resetTimerLogic();
+}
+async function loadTaskImageForStudent(task) {
+  const box = document.getElementById('task-image-box');
+  const img = document.getElementById('task-image');
+  const hint = document.getElementById('task-image-hint');
+  if (!box || !img || !task || !task.image || !task.image.fileId || !isAppsScriptConfigured()) {
+    if (box) box.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+  img.removeAttribute('src');
+  hint.textContent = 'Загружаем картинку...';
+  try {
+    const data = await appsScriptJsonp('getTaskImage', { id: task.id });
+    if (data && data.ok && data.dataUrl) {
+      img.src = data.dataUrl;
+      hint.textContent = 'Рассмотри картинку и опиши её в ответе.';
+    } else {
+      throw new Error(data?.error || 'Картинка не загрузилась');
+    }
+  } catch (error) {
+    hint.textContent = 'Не удалось загрузить картинку: ' + (error.message || error);
+  }
+}
+function showTask(id) { currentTaskId = String(id); renderTabs(); renderTask(); }
+function resetTimerLogic() {
+  clearInterval(timer); timer = null; stopRecordingIfNeeded(); currentAudio = null;
+  const task = getCurrentTask();
+  isPreparing = Number(task.prepSeconds || 0) > 0;
+  timeLeft = isPreparing ? Number(task.prepSeconds) : Number(task.answerSeconds || 180);
+  document.getElementById('timer-btn').innerText = '▶ Запустить таймер';
+  document.getElementById('timer-label').innerText = isPreparing ? 'Бэлэмнэнии кэмэ' : 'Хоруйдууруҥ';
+  document.getElementById('time').innerText = formatTime(timeLeft);
+  document.getElementById('record-btn').disabled = isPreparing;
+  document.getElementById('record-btn').innerText = '🎙 Начать запись';
+  document.getElementById('record-btn').className = 'record-off';
+  const readyBtn = document.getElementById('ready-record-btn');
+  readyBtn.classList.toggle('hidden', !isPreparing); readyBtn.disabled = !isPreparing;
+  document.getElementById('record-status').textContent = isPreparing ? 'Можно ждать таймер или нажать «Готов — начать запись».' : 'Можно сразу записывать ответ.';
+  document.getElementById('audio-playback-container').classList.add('hidden');
+  document.getElementById('audio-playback').removeAttribute('src');
+  document.getElementById('student-note').value = '';
+}
+function formatTime(seconds) { const m = Math.floor(seconds / 60).toString().padStart(2,'0'); const s = (seconds % 60).toString().padStart(2,'0'); return `${m}:${s}`; }
+function toggleTimer() {
+  if (timer) { clearInterval(timer); timer = null; document.getElementById('timer-btn').innerText = '▶ Продолжить таймер'; }
+  else { document.getElementById('timer-btn').innerText = '⏸ Остановить таймер'; timer = setInterval(updateTimer, 1000); }
+}
+function switchToAnswerMode(message) {
+  clearInterval(timer); timer = null;
+  const task = getCurrentTask();
+  isPreparing = false; timeLeft = Number(task.answerSeconds || 180);
+  document.getElementById('timer-label').innerText = 'Хоруйдууруҥ';
+  document.getElementById('time').innerText = formatTime(timeLeft);
+  document.getElementById('record-btn').disabled = false;
+  document.getElementById('ready-record-btn').classList.add('hidden');
+  document.getElementById('ready-record-btn').disabled = true;
+  document.getElementById('record-status').textContent = message || 'Можно записывать ответ.';
+}
+async function startAnswerNow() {
+  switchToAnswerMode('Запускаем запись ответа...');
+  const started = await toggleRecording();
+  if (started) { document.getElementById('timer-btn').innerText = '⏸ Остановить таймер'; timer = setInterval(updateTimer, 1000); }
+  else { document.getElementById('timer-btn').innerText = '▶ Запустить таймер ответа'; }
+}
+function updateTimer() {
+  if (timeLeft <= 0) {
+    clearInterval(timer); timer = null;
+    if (isPreparing) { showToast('Бэлэмнэнии кэмэ бүттэ!'); switchToAnswerMode('Нажмите кнопку записи и отвечайте вслух.'); }
+    else { showToast('Бириэмэ бүттэ!', 'warn'); if (mediaRecorder && mediaRecorder.state === 'recording') stopRecordingIfNeeded(); }
+    return;
+  }
+  timeLeft--; document.getElementById('time').innerText = formatTime(timeLeft);
+}
+function getSupportedMimeType() { return ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || ''; }
+async function toggleRecording() {
+  const recordBtn = document.getElementById('record-btn');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showToast('Браузер не поддерживает микрофон', 'error'); return false; }
+  if (recordBtn.classList.contains('record-off')) {
+    try {
+      audioChunks = [];
+      const mimeType = getSupportedMimeType();
+      activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(activeStream, mimeType ? { mimeType } : undefined);
+      mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        const type = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunks, { type });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        currentAudio = { blob: audioBlob, dataUrl: await blobToDataURL(audioBlob), mimeType: type, size: audioBlob.size };
+        document.getElementById('audio-playback').src = audioUrl;
+        document.getElementById('audio-playback-container').classList.remove('hidden');
+        document.getElementById('record-status').textContent = 'Запись готова. Отправьте работу учителю.';
+        stopTracks();
+      };
+      mediaRecorder.start();
+      recordBtn.innerText = '⏹ Остановить запись';
+      recordBtn.className = 'record-on';
+      document.getElementById('record-status').textContent = 'Идёт запись ответа...';
+      return true;
+    } catch (error) {
+      showToast('Разрешите доступ к микрофону', 'error');
+      return false;
+    }
+  } else { stopRecordingIfNeeded(); return true; }
+}
+function stopRecordingIfNeeded() { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); const b = document.getElementById('record-btn'); if (b) { b.innerText = '🎙 Начать запись'; b.className = 'record-off'; } }
+function stopTracks() { if (activeStream) { activeStream.getTracks().forEach(t => t.stop()); activeStream = null; } }
+function blobToDataURL(blob) { return new Promise((res, rej) => { const reader = new FileReader(); reader.onloadend = () => res(reader.result); reader.onerror = rej; reader.readAsDataURL(blob); }); }
+function collectSubmission() {
+  if (!currentAudio) return null;
+  const task = getCurrentTask();
+  const ext = currentAudio.mimeType.includes('ogg') ? 'ogg' : currentAudio.mimeType.includes('mp4') ? 'm4a' : 'webm';
+  return { app:'saha-exam-v2', type:'student-submission', version:4, id:makeId('work'), createdAt:new Date().toISOString(), status:'sent', student:{ id:currentUser.id, fullName:currentUser.fullName, className:currentUser.className, login:currentUser.login }, task:{ id:task.id, title:task.title, instruction:task.instruction, imageFileId:(task.image&&task.image.fileId)||'' }, note:document.getElementById('student-note').value.trim(), audio:{ fileName:`answer-task-${task.id}.${ext}`, mimeType:currentAudio.mimeType, size:currentAudio.size, dataUrl:currentAudio.dataUrl } };
+}
+async function sendSubmissionToTeacher() {
+  if (!currentAudio) return showToast('Сначала запишите ответ', 'error');
+  if (!isAppsScriptConfigured()) return showToast(APPS_SCRIPT_FALLBACK_MESSAGE, 'error');
+  const btn = document.getElementById('send-submission-btn'); const old = btn.textContent; btn.disabled = true; btn.textContent = 'Отправляем...';
+  try {
+    const submission = collectSubmission(); submission.sentAt = new Date().toISOString();
+    const saved = await postAndVerify({ action:'submit', submission }, submission.id);
+    if (saved.status === 'audio_error') showToast('Работа пришла, но аудио с ошибкой: ' + (saved.audioError || ''), 'warn');
+    else showToast('Работа отправлена учителю');
+    document.getElementById('apps-script-status').textContent = 'Работа есть в Google Таблице. Статус: ' + (saved.status || 'sent');
+  } catch (error) { showToast(error.message || 'Не удалось отправить', 'error'); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+function downloadSubmission() { const s = collectSubmission(); if (!s) return showToast('Сначала запишите ответ', 'error'); downloadJSON(s, `работа_${currentUser.fullName.replace(/[^А-Яа-яA-Za-z0-9_-]+/g,'_')}_${s.task.id}.json`); }
+function downloadJSON(data, filename) { const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json;charset=utf-8'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function resetStudentProgress() { renderTask(); showToast('Задание сброшено'); }
+function updateAppsScriptStatus() { const s = document.getElementById('apps-script-status'); if (s) s.textContent = isAppsScriptConfigured() ? 'Google Таблица подключена.' : 'Google Таблица не настроена.'; }
+function escapeHTML(v) { return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+function escapeAttr(v) { return String(v ?? '').replace(/[\\']/g, '\\$&').replace(/</g, '&lt;'); }
+restoreSession();
+</script>
+</body>
+</html>
