@@ -248,36 +248,36 @@ async function renderTaskImagePreview(task){
     return;
   }
 
-  info.textContent='Картинка загружена: '+(task.image.fileName||task.image.fileId)+'. Загружаем предпросмотр...';
+  info.textContent='Хартыына угулунна: '+(task.image.fileName||task.image.fileId)+'. Уларыта көрүүнү угабыт...';
   try{
     const response=await appsScriptJsonp('getTaskImage',{id:task.id});
     if(response&&response.ok&&response.dataUrl){
-      preview.innerHTML=`<img src="${response.dataUrl}" alt="Картинка задания" class="task-image">`;
+      preview.innerHTML=`<img src="${response.dataUrl}" alt="Сорудах хартыыната" class="task-image">`;
       preview.classList.remove('hidden');
-      info.textContent='Картинка загружена и будет показана ученику.';
+      info.textContent='артыына угулунна уонна үөрэнээччигэ көрдөрүллүө..';
       return;
     }
-    throw new Error(response?.error||'Картинка не получена');
+    throw new Error(response?.error||'Ойуу кэлбэтэ');
   }catch(e){
     if(task.image.directUrl){
       preview.innerHTML=`<img src="${escapeAttr(task.image.directUrl)}" alt="Картинка задания" class="task-image">`;
       preview.classList.remove('hidden');
-      info.textContent='Картинка есть, но предпросмотр через Apps Script не загрузился. Ученик попробует загрузить её напрямую.';
+      info.textContent='Хартыына баар, ол эрэн Apps Script нөҥүө уларыта көрүүтэ угулубата. Үөрэнээччи бэйэтэ быһаччы уган көрүө..';
     }else{
-      info.textContent='Картинка есть в таблице, но её не удалось показать: '+(e.message||e);
+      info.textContent='Хартыына таблицаҕа баар, ол эрэн көрдөрөр кыаллыбата: '+(e.message||e);
     }
   }
 }
 
 function resizeImageFile(file, maxSize=1400, quality=0.86){
   return new Promise((resolve,reject)=>{
-    if(!file) return reject(new Error('Файл не выбран'));
-    if(!file.type.startsWith('image/')) return reject(new Error('Выберите файл изображения'));
+    if(!file) return reject(new Error('Файл талылла илик'));
+    if(!file.type.startsWith('image/')) return reject(new Error('Хартыына файлын талыҥ'));
     const reader=new FileReader();
-    reader.onerror=()=>reject(new Error('Не удалось прочитать файл'));
+    reader.onerror=()=>reject(new Error('Файлы ааҕар кыаллыбата'));
     reader.onload=()=>{
       const img=new Image();
-      img.onerror=()=>reject(new Error('Не удалось открыть изображение'));
+      img.onerror=()=>reject(new Error('Хартыына аһыллыбата'));
       img.onload=()=>{
         let w=img.width, h=img.height;
         const scale=Math.min(1, maxSize/Math.max(w,h));
@@ -300,20 +300,20 @@ async function uploadTaskImageFromEditor(){
   const status=document.getElementById('task-editor-status');
   const taskId=document.getElementById('edit-task-id').value.trim();
   const file=document.getElementById('edit-task-image-file').files[0];
-  if(!taskId) return showToast('Сначала выберите или укажите ID задания','error');
-  if(!file) return showToast('Выберите картинку','error');
-  status.textContent='Готовим и загружаем картинку...';
+  if(!taskId) return showToast('Бастаан сорудах талыҥ эбэтэр ID-тын ыйыҥ','error');
+  if(!file) return showToast('Хартыынаны талыҥ','error');
+  status.textContent='Хартыынаны бэлэмниибит уонна угабыт...';
   try{
     const image=await resizeImageFile(file);
     await postToAppsScriptByForm({action:'uploadTaskImage',taskId,image});
     await sleep(1800);
-    status.textContent='Картинка загружена. Ученик увидит её после обновления заданий.';
-    showToast('Картинка загружена');
+    status.textContent='Хартыына угулунна. Үөрэнээччи сорудахтар саҥардыллыбыттарын кэннэ көрүө..';
+    showToast('Хартыына угулунна');
     await loadTasksForEdit();
     editTask(taskId);
   }catch(e){
-    status.textContent='Ошибка загрузки картинки: '+(e.message||e);
-    showToast('Не удалось загрузить картинку','error');
+    status.textContent='Хартыынаны угуу алҕаһа: '+(e.message||e);
+    showToast('Хартыынаны угар кыаллыбата','error');
   }
 }
 
