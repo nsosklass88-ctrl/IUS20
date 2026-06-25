@@ -254,7 +254,7 @@ async function renderTaskImagePreview(task){
     if(response&&response.ok&&response.dataUrl){
       preview.innerHTML=`<img src="${response.dataUrl}" alt="Сорудах хартыыната" class="task-image">`;
       preview.classList.remove('hidden');
-      info.textContent='артыына угулунна уонна үөрэнээччигэ көрдөрүллүө..';
+      info.textContent='Хартыына угулунна уонна үөрэнээччигэ көрдөрүллүө..';
       return;
     }
     throw new Error(response?.error||'Ойуу кэлбэтэ');
@@ -320,36 +320,36 @@ async function uploadTaskImageFromEditor(){
 async function clearTaskImageFromEditor(){
   const status=document.getElementById('task-editor-status');
   const taskId=document.getElementById('edit-task-id').value.trim();
-  if(!taskId) return showToast('Сначала выберите задание','error');
-  status.textContent='Убираем картинку...';
+  if(!taskId) return showToast('Бастаан сорудаҕы талыҥ','error');
+  status.textContent='Хартыынаны сотобут...';
   try{
     await postToAppsScriptByForm({action:'clearTaskImage',taskId});
     await sleep(1200);
-    status.textContent='Картинка убрана из задания.';
-    showToast('Картинка убрана');
+    status.textContent='Хартыына сорудахтан уһулунна.';
+    showToast('Хартыына уһулунна');
     await loadTasksForEdit();
     editTask(taskId);
   }catch(e){
-    status.textContent='Ошибка: '+(e.message||e);
-    showToast('Не удалось убрать картинку','error');
+    status.textContent='Алҕас: '+(e.message||e);
+    showToast('Хартыынаны уларар кыаллыбата','error');
   }
 }
 
 async function saveTaskFromEditor(){
   const status=document.getElementById('task-editor-status');
   const task={id:document.getElementById('edit-task-id').value.trim(),tabTitle:document.getElementById('edit-task-tab').value.trim(),title:document.getElementById('edit-task-title').value.trim(),prepSeconds:Number(document.getElementById('edit-task-prep').value||0),answerSeconds:Number(document.getElementById('edit-task-answer').value||180),instruction:document.getElementById('edit-task-instruction').value,content:document.getElementById('edit-task-content').value};
-  if(!task.id||!task.title)return showToast('Заполните ID и название','error');
-  status.textContent='Сохраняем...';
+  if(!task.id||!task.title)return showToast('ID уонна аатын толоруҥ','error');
+  status.textContent='Бигэргэтэбит...';
   try{
     await postToAppsScriptByForm({action:'saveTask',task});
     await sleep(1200);
-    status.textContent='Задание сохранено. Ученик должен обновить задания.';
-    showToast('Задание сохранено');
+    status.textContent='Сорудах бигэргэтилиннэ. Үөрэнээччи сорудахтары саҥардыахтаах..';
+    showToast('Сорудах бигэргэтилиннэ');
     await loadTasksForEdit();
     editTask(task.id);
   }catch(e){
-    status.textContent='Ошибка: '+(e.message||e);
-    showToast('Не удалось сохранить задание','error');
+    status.textContent='Алҕас: '+(e.message||e);
+    showToast('Сорудаҕы бигэргэтэр кыаллыбата','error');
   }
 }
 function formatDateTime(v){if(!v)return'—'; try{return new Date(v).toLocaleString('ru-RU');}catch(e){return'—';}}
