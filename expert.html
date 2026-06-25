@@ -68,21 +68,21 @@
         <h2>1. Google Таблица</h2>
         <button class="secondary full" onclick="checkConnection()">🔎 Холбооһуну бэрэбиэркэлээ</button>
         <button class="primary full" onclick="loadSubmissions()">🔄 Ыытыллыбыт үлэлэри көрдөөһүн</button>
-        <div id="teacher-status" class="hint status-line">Нажмите проверку подключения.</div>
+        <div id="teacher-status" class="hint status-line">Холбооһуну бэрэбиэркэлээ.</div>
         <div id="submissions-list" class="work-list"></div>
 
-        <h2>2. Аудио</h2>
+        <h2>2. Иhиттик</h2>
         <audio id="student-audio" controls class="full-audio"></audio>
-        <p id="audio-hint" class="hint">После открытия работы здесь появится запись.</p>
+        <p id="audio-hint" class="hint">Үлэ арыллыбытын кэннэ манна тылбаас баар буолуоҕа.</p>
 
-        <h2>3. JSON запасной вариант</h2>
+        <h2>3. JSON Эбии барыйаан</h2>
         <label class="file-drop">
           <input id="submission-file" type="file" accept="application/json,.json" onchange="importSubmission(event)">
-          <span>⬆ Загрузить JSON-файл ответа</span>
+          <span>⬆ Эппиэт JSON-файлын киллэр</span>
         </label>
 
-        <h2>4. Комментарий учителя</h2>
-        <textarea id="teacher-comment" rows="5" placeholder="Замечания, рекомендации"></textarea>
+        <h2>4. Учуутал быһаарыыта</h2>
+        <textarea id="teacher-comment" rows="5" placeholder="Хос быһаарыылар, сүбэлээһиннэр"></textarea>
       </aside>
 
       <section class="panel protocol-panel" id="protocol-print-area">
@@ -97,9 +97,9 @@
         <div id="import-info" class="result-box hidden"></div>
 
         <div class="student-form grid three">
-          <label>Ученик<input id="student-name" type="text" placeholder="ФИО ученика"></label>
-          <label>Класс<input id="student-class" type="text" placeholder="8А"></label>
-          <label>Задание<input id="task-title" type="text" placeholder="Задание"></label>
+          <label>Үөрэнээччи<input id="student-name" type="text" placeholder="ФИО ученика"></label>
+          <label>Кылаас<input id="student-class" type="text" placeholder="8А"></label>
+          <label>Сорудах<input id="task-title" type="text" placeholder="Сорудах"></label>
         </div>
 
         <div id="criteria-list" class="criteria-list"></div>
