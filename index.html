@@ -332,7 +332,7 @@ function resetTimerLogic() {
 }
 function formatTime(seconds) { const m = Math.floor(seconds / 60).toString().padStart(2,'0'); const s = (seconds % 60).toString().padStart(2,'0'); return `${m}:${s}`; }
 function toggleTimer() {
-  if (timer) { clearInterval(timer); timer = null; document.getElementById('timer-btn').innerText = '▶ Продолжить таймер'; }
+  if (timer) { clearInterval(timer); timer = null; document.getElementById('timer-btn').innerText = '▶ Таймеры салҕааҥ'; }
   else { document.getElementById('timer-btn').innerText = '⏸ Остановить таймер'; timer = setInterval(updateTimer, 1000); }
 }
 function switchToAnswerMode(message) {
@@ -350,7 +350,7 @@ async function startAnswerNow() {
   switchToAnswerMode('Запускаем запись ответа...');
   const started = await toggleRecording();
   if (started) { document.getElementById('timer-btn').innerText = '⏸ Остановить таймер'; timer = setInterval(updateTimer, 1000); }
-  else { document.getElementById('timer-btn').innerText = '▶ Запустить таймер ответа'; }
+  else { document.getElementById('timer-btn').innerText = '▶ Хоруй таймерын холбооҥ'; }
 }
 function updateTimer() {
   if (timeLeft <= 0) {
