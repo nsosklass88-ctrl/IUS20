@@ -58,17 +58,17 @@
   <section id="student-view" class="hidden">
     <div class="student-head panel compact">
       <div>
-        <h2 id="student-title">Кабинет ученика</h2>
+        <h2 id="student-title">Үөрэнээччи хоhо</h2>
         <p class="muted" id="student-subtitle"></p>
       </div>
       <div class="student-actions">
-        <button class="ghost" onclick="loadTasks(true)">🔄 Обновить задания</button>
-        <button class="ghost" onclick="resetStudentProgress()">Сбросить</button>
-        <button class="danger-light" onclick="logout()">Выйти</button>
+        <button class="ghost" onclick="loadTasks(true)">🔄 Сорудахтары саҥардыҥ</button>
+        <button class="ghost" onclick="resetStudentProgress()">Төннөрүҥ</button>
+        <button class="danger-light" onclick="logout()">Тахсыы</button>
       </div>
     </div>
 
-    <div id="tabs" class="tabs" role="tablist" aria-label="Задания"></div>
+    <div id="tabs" class="tabs" role="tablist" aria-label="Срудахтар"></div>
 
     <div class="grid main-grid">
       <article id="task-content" class="task-box"></article>
@@ -79,19 +79,19 @@
           <strong id="time">01:00</strong>
         </div>
         <div class="buttons stacked">
-          <button id="timer-btn" onclick="toggleTimer()">▶ Запустить таймер</button>
-          <button id="ready-record-btn" class="ready-btn" onclick="startAnswerNow()">✅ Готов — начать запись</button>
-          <button id="record-btn" class="record-off" onclick="toggleRecording()" disabled>🎙 Начать запись</button>
+          <button id="timer-btn" onclick="toggleTimer()">▶ Таймеры холбооҥ</button>
+          <button id="ready-record-btn" class="ready-btn" onclick="startAnswerNow()">✅ Бэлэммин — устууну саҕалыахха</button>
+          <button id="record-btn" class="record-off" onclick="toggleRecording()" disabled>🎙 Устууну саҕалааҥ</button>
         </div>
-        <p id="record-status" class="muted center">Можно ждать таймер или нажать «Готов — начать запись».</p>
+        <p id="record-status" class="muted center">Таймеры күүтэ түһүөххэ эбэтэр «Бэлэммин — устууну саҕалыахха» баттааҥ.</p>
 
         <div id="audio-playback-container" class="hidden result-box">
-          <h3>Ответ записан</h3>
+          <h3>Хоруй уһулунна</h3>
           <audio id="audio-playback" controls></audio>
-          <label>Комментарий ученика</label>
-          <textarea id="student-note" rows="4" placeholder="Комментарий для учителя"></textarea>
-          <button id="send-submission-btn" class="primary full" onclick="sendSubmissionToTeacher()">📤 Отправить работу учителю</button>
-          <button class="ghost full" onclick="downloadSubmission()">⬇ Скачать JSON запасной вариант</button>
+          <label>Үөрэнээччи санаата</label>
+          <textarea id="student-note" rows="4" placeholder="Учууталга санааны халларыы"></textarea>
+          <button id="send-submission-btn" class="primary full" onclick="sendSubmissionToTeacher()">📤 Үлэни учууталга ыытыҥ</button>
+          <button class="ghost full" onclick="downloadSubmission()">⬇ JSON скачайдыыр эбии вариант</button>
           <p id="apps-script-status" class="hint"></p>
         </div>
       </aside>
