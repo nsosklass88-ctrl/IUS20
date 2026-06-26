@@ -317,11 +317,11 @@ function resetTimerLogic() {
   const task = getCurrentTask();
   isPreparing = Number(task.prepSeconds || 0) > 0;
   timeLeft = isPreparing ? Number(task.prepSeconds) : Number(task.answerSeconds || 180);
-  document.getElementById('timer-btn').innerText = '▶ Запустить таймер';
+  document.getElementById('timer-btn').innerText = '▶ Устууну саҕалааҥ';
   document.getElementById('timer-label').innerText = isPreparing ? 'Бэлэмнэнии кэмэ' : 'Хоруйдууруҥ';
   document.getElementById('time').innerText = formatTime(timeLeft);
   document.getElementById('record-btn').disabled = isPreparing;
-  document.getElementById('record-btn').innerText = '🎙 Начать запись';
+  document.getElementById('record-btn').innerText = '🎙 Устууну саҕалааҥ';
   document.getElementById('record-btn').className = 'record-off';
   const readyBtn = document.getElementById('ready-record-btn');
   readyBtn.classList.toggle('hidden', !isPreparing); readyBtn.disabled = !isPreparing;
