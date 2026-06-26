@@ -347,7 +347,7 @@ function switchToAnswerMode(message) {
   document.getElementById('record-status').textContent = message || 'Хоруйу устуохха сөп.';
 }
 async function startAnswerNow() {
-  switchToAnswerMode('Запускаем запись ответа...');
+  switchToAnswerMode('Хоруй устуутун саҕалыыбыт...');
   const started = await toggleRecording();
   if (started) { document.getElementById('timer-btn').innerText = '⏸ Таймеры тохтотуҥ'; timer = setInterval(updateTimer, 1000); }
   else { document.getElementById('timer-btn').innerText = '▶ Хоруй таймерын холбооҥ'; }
