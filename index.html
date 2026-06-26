@@ -141,7 +141,7 @@ function appsScriptJsonp(action, params = {}) {
     const script = document.createElement('script');
     const cleanup = () => { delete window[callbackName]; script.remove(); };
     window[callbackName] = data => { cleanup(); resolve(data); };
-    script.onerror = () => { cleanup(); reject(new Error('Не удалось получить ответ Apps Script')); };
+    script.onerror = () => { cleanup(); reject(new Error('Apps Script хоруйун ылар кыаллыбата')); };
     script.src = getAppsScriptUrl() + '?' + query.toString();
     document.body.appendChild(script);
   });
@@ -182,7 +182,7 @@ async function postAndVerify(payload, workId) {
       if (check && check.ok && check.item) return check.item;
     } catch (e) {}
   }
-  throw new Error('Работа не появилась в таблице. Проверьте Apps Script');
+  throw new Error('Үлэ таблицаҕа тахсыбата. Бука диэн, Apps Script-ы бэрэбиэркэлээҥ');
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -208,10 +208,10 @@ async function registerUser() {
   const className = document.getElementById('reg-class').value.trim();
   const login = document.getElementById('reg-login').value.trim().toLowerCase();
   const password = document.getElementById('reg-password').value;
-  if (!fullName || !className || !login || !password) return showToast('Заполните все поля', 'error');
-  if (password.length < 4) return showToast('Пароль минимум 4 символа', 'error');
+  if (!fullName || !className || !login || !password) return showToast('Бары күүлэри толоруҥ', 'error');
+  if (password.length < 4) return showToast('Пароль кырата 4 бэлиэлээх буолуохтаах', 'error');
   const users = getUsers();
-  if (users.some(u => u.login === login)) return showToast('Такой логин уже есть', 'error');
+  if (users.some(u => u.login === login)) return showToast('Инник логин баар', 'error');
   const user = { id: makeId('student'), role:'student', fullName, className, login, passwordHash: await hashPassword(password), createdAt: new Date().toISOString() };
   users.push(user); saveUsers(users);
   localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: user.id }));
@@ -221,7 +221,7 @@ async function loginUser() {
   const login = document.getElementById('login-name').value.trim().toLowerCase();
   const passwordHash = await hashPassword(document.getElementById('login-password').value);
   const user = getUsers().find(u => u.login === login && u.passwordHash === passwordHash && u.role === 'student');
-  if (!user) return showToast('Логин или пароль неверный', 'error');
+  if (!user) return showToast('Киирэр аат эбэтэр пароль сыыһа', 'error');
   localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: user.id }));
   startSession(user);
 }
@@ -237,7 +237,7 @@ async function startSession(user) {
   document.getElementById('student-view').classList.remove('hidden');
   document.getElementById('session-status').textContent = `${user.fullName} · ${user.className}`;
   document.getElementById('student-title').textContent = `Кабинет ученика: ${user.fullName}`;
-  document.getElementById('student-subtitle').textContent = `Класс: ${user.className}. Запишите и отправьте работу учителю.`;
+  document.getElementById('student-subtitle').textContent = `Класс: ${user.className}. Үлэни устуҥ уонна учууталга ыытыҥ.`;
   await loadTasks(false);
   updateAppsScriptStatus();
 }
@@ -246,12 +246,12 @@ async function loadTasks(manual) {
   try {
     if (!isAppsScriptConfigured()) throw new Error(APPS_SCRIPT_FALLBACK_MESSAGE);
     const data = await appsScriptJsonp('listTasks');
-    if (!data || !data.ok || !data.tasks || !data.tasks.length) throw new Error(data?.error || 'Задания не найдены');
+    if (!data || !data.ok || !data.tasks || !data.tasks.length) throw new Error(data?.error || 'Сорудахтар көстүбэтилэр');
     tasks = data.tasks;
-    if (manual) showToast('Задания обновлены');
+    if (manual) showToast('Сорудахтар саҥардылыннылар');
   } catch (error) {
     tasks = fallbackTasks;
-    if (manual) showToast('Не удалось загрузить задания из таблицы, включены встроенные', 'warn');
+    if (manual) showToast('аблицатан сорудахтары угар кыаллыбата, ис сорудахтар холбоннулар.', 'warn');
   }
   currentTaskId = String(tasks[0]?.id || '1');
   renderTabs();
@@ -266,12 +266,12 @@ function renderTask() {
   const task = getCurrentTask();
   const hasImage = Boolean(task.image?.fileId || task.imageFileId || task.image?.directUrl);
   const imageBlock = hasImage
-    ? `<div id="task-image-box" class="task-image-box"><div class="image-loading">🖼 Загружаем картинку задания...</div></div>`
+    ? `<div id="task-image-box" class="task-image-box"><div class="image-loading">🖼 Сорудах хартыынатын угабыт...</div></div>`
     : '';
 
   document.getElementById('task-content').innerHTML = `
     <div class="task-header">
-      <span class="badge">Задание ${escapeHTML(task.id)}</span>
+      <span class="badge">Сорудах ${escapeHTML(task.id)}</span>
       <h2>${escapeHTML(task.title)}</h2>
     </div>
     <p class="instruction"><em>${escapeHTML(task.instruction)}</em></p>
@@ -291,7 +291,7 @@ async function loadTaskImageForStudent(task) {
     box.innerHTML = '';
     const img = document.createElement('img');
     img.src = src;
-    img.alt = 'Картинка к заданию для описания';
+    img.alt = 'Ойуулааһын сорудаҕын хартыыната';
     img.className = 'task-image';
     box.appendChild(img);
   };
@@ -302,13 +302,13 @@ async function loadTaskImageForStudent(task) {
       showImage(response.dataUrl);
       return;
     }
-    throw new Error(response?.error || 'Картинка не получена');
+    throw new Error(response?.error || 'Хартыына тутулла илик');
   } catch (error) {
     if (task.image?.directUrl) {
       showImage(task.image.directUrl);
       return;
     }
-    box.innerHTML = '<div class="image-error">Картинку не удалось загрузить. Нажмите «Обновить задания» или сообщите учителю.</div>';
+    box.innerHTML = '<div class="image-error">Хартыынаны угар кыаллыбата. «Сорудахтары саҥардыҥ» баттааҥ эбэтэр учууталга биллэриҥ.</div>';
   }
 }
 function showTask(id) { currentTaskId = String(id); renderTabs(); renderTask(); }
@@ -325,7 +325,7 @@ function resetTimerLogic() {
   document.getElementById('record-btn').className = 'record-off';
   const readyBtn = document.getElementById('ready-record-btn');
   readyBtn.classList.toggle('hidden', !isPreparing); readyBtn.disabled = !isPreparing;
-  document.getElementById('record-status').textContent = isPreparing ? 'Можно ждать таймер или нажать «Готов — начать запись».' : 'Можно сразу записывать ответ.';
+  document.getElementById('record-status').textContent = isPreparing ? 'Таймеры күүтэ түһүөххэ эбэтэр «Бэлэммин — устууну саҕалыахха» баттааҥ.' : 'Хоруйу тута устуохха сөп.';
   document.getElementById('audio-playback-container').classList.add('hidden');
   document.getElementById('audio-playback').removeAttribute('src');
   document.getElementById('student-note').value = '';
@@ -333,7 +333,7 @@ function resetTimerLogic() {
 function formatTime(seconds) { const m = Math.floor(seconds / 60).toString().padStart(2,'0'); const s = (seconds % 60).toString().padStart(2,'0'); return `${m}:${s}`; }
 function toggleTimer() {
   if (timer) { clearInterval(timer); timer = null; document.getElementById('timer-btn').innerText = '▶ Таймеры салҕааҥ'; }
-  else { document.getElementById('timer-btn').innerText = '⏸ Остановить таймер'; timer = setInterval(updateTimer, 1000); }
+  else { document.getElementById('timer-btn').innerText = '⏸ Таймеры тохтотуҥ'; timer = setInterval(updateTimer, 1000); }
 }
 function switchToAnswerMode(message) {
   clearInterval(timer); timer = null;
@@ -344,18 +344,18 @@ function switchToAnswerMode(message) {
   document.getElementById('record-btn').disabled = false;
   document.getElementById('ready-record-btn').classList.add('hidden');
   document.getElementById('ready-record-btn').disabled = true;
-  document.getElementById('record-status').textContent = message || 'Можно записывать ответ.';
+  document.getElementById('record-status').textContent = message || 'Хоруйу устуохха сөп.';
 }
 async function startAnswerNow() {
   switchToAnswerMode('Запускаем запись ответа...');
   const started = await toggleRecording();
-  if (started) { document.getElementById('timer-btn').innerText = '⏸ Остановить таймер'; timer = setInterval(updateTimer, 1000); }
+  if (started) { document.getElementById('timer-btn').innerText = '⏸ Таймеры тохтотуҥ'; timer = setInterval(updateTimer, 1000); }
   else { document.getElementById('timer-btn').innerText = '▶ Хоруй таймерын холбооҥ'; }
 }
 function updateTimer() {
   if (timeLeft <= 0) {
     clearInterval(timer); timer = null;
-    if (isPreparing) { showToast('Бэлэмнэнии кэмэ бүттэ!'); switchToAnswerMode('Нажмите кнопку записи и отвечайте вслух.'); }
+    if (isPreparing) { showToast('Бэлэмнэнии кэмэ бүттэ!'); switchToAnswerMode('Устуу кнопкатын баттааҥ уонна куоласкытынан хоруйдааҥ.'); }
     else { showToast('Бириэмэ бүттэ!', 'warn'); if (mediaRecorder && mediaRecorder.state === 'recording') stopRecordingIfNeeded(); }
     return;
   }
@@ -364,7 +364,7 @@ function updateTimer() {
 function getSupportedMimeType() { return ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || ''; }
 async function toggleRecording() {
   const recordBtn = document.getElementById('record-btn');
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showToast('Браузер не поддерживает микрофон', 'error'); return false; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showToast('Браузер микрофону өйөөбөт', 'error'); return false; }
   if (recordBtn.classList.contains('record-off')) {
     try {
       audioChunks = [];
@@ -379,21 +379,21 @@ async function toggleRecording() {
         currentAudio = { blob: audioBlob, dataUrl: await blobToDataURL(audioBlob), mimeType: type, size: audioBlob.size };
         document.getElementById('audio-playback').src = audioUrl;
         document.getElementById('audio-playback-container').classList.remove('hidden');
-        document.getElementById('record-status').textContent = 'Запись готова. Отправьте работу учителю.';
+        document.getElementById('record-status').textContent = 'Устуу бэлэм. Үлэни учууталга ыытыҥ.';
         stopTracks();
       };
       mediaRecorder.start();
-      recordBtn.innerText = '⏹ Остановить запись';
+      recordBtn.innerText = '⏹ Устууну тохтотуҥ';
       recordBtn.className = 'record-on';
-      document.getElementById('record-status').textContent = 'Идёт запись ответа...';
+      document.getElementById('record-status').textContent = 'Устууну тохтотуҥ...';
       return true;
     } catch (error) {
-      showToast('Разрешите доступ к микрофону', 'error');
+      showToast('Микрофоҥҥо киирэр быраабы биэриҥ', 'error');
       return false;
     }
   } else { stopRecordingIfNeeded(); return true; }
 }
-function stopRecordingIfNeeded() { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); const b = document.getElementById('record-btn'); if (b) { b.innerText = '🎙 Начать запись'; b.className = 'record-off'; } }
+function stopRecordingIfNeeded() { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); const b = document.getElementById('record-btn'); if (b) { b.innerText = '🎙 Устууну саҕалааҥ'; b.className = 'record-off'; } }
 function stopTracks() { if (activeStream) { activeStream.getTracks().forEach(t => t.stop()); activeStream = null; } }
 function blobToDataURL(blob) { return new Promise((res, rej) => { const reader = new FileReader(); reader.onloadend = () => res(reader.result); reader.onerror = rej; reader.readAsDataURL(blob); }); }
 function collectSubmission() {
@@ -403,22 +403,22 @@ function collectSubmission() {
   return { app:'saha-exam-v2', type:'student-submission', version:4, id:makeId('work'), createdAt:new Date().toISOString(), status:'sent', student:{ id:currentUser.id, fullName:currentUser.fullName, className:currentUser.className, login:currentUser.login }, task:{ id:task.id, title:task.title, instruction:task.instruction }, note:document.getElementById('student-note').value.trim(), audio:{ fileName:`answer-task-${task.id}.${ext}`, mimeType:currentAudio.mimeType, size:currentAudio.size, dataUrl:currentAudio.dataUrl } };
 }
 async function sendSubmissionToTeacher() {
-  if (!currentAudio) return showToast('Сначала запишите ответ', 'error');
+  if (!currentAudio) return showToast('Бастаан хоруйгутун устуҥ', 'error');
   if (!isAppsScriptConfigured()) return showToast(APPS_SCRIPT_FALLBACK_MESSAGE, 'error');
-  const btn = document.getElementById('send-submission-btn'); const old = btn.textContent; btn.disabled = true; btn.textContent = 'Отправляем...';
+  const btn = document.getElementById('send-submission-btn'); const old = btn.textContent; btn.disabled = true; btn.textContent = 'Ыытабыт...';
   try {
     const submission = collectSubmission(); submission.sentAt = new Date().toISOString();
     const saved = await postAndVerify({ action:'submit', submission }, submission.id);
-    if (saved.status === 'audio_error') showToast('Работа пришла, но аудио с ошибкой: ' + (saved.audioError || ''), 'warn');
-    else showToast('Работа отправлена учителю');
-    document.getElementById('apps-script-status').textContent = 'Работа есть в Google Таблице. Статус: ' + (saved.status || 'sent');
-  } catch (error) { showToast(error.message || 'Не удалось отправить', 'error'); }
+    if (saved.status === 'audio_error') showToast('Үлэ кэллэ, ол эрэн аудиота алҕастаах: ' + (saved.audioError || ''), 'warn');
+    else showToast('Үлэ учууталга ыытылынна');
+    document.getElementById('apps-script-status').textContent = 'Үлэ Google Таблицаҕа баар. Статус: ' + (saved.status || 'sent');
+  } catch (error) { showToast(error.message || 'Ыытар кыаллыбата', 'error'); }
   finally { btn.disabled = false; btn.textContent = old; }
 }
-function downloadSubmission() { const s = collectSubmission(); if (!s) return showToast('Сначала запишите ответ', 'error'); downloadJSON(s, `работа_${currentUser.fullName.replace(/[^А-Яа-яA-Za-z0-9_-]+/g,'_')}_${s.task.id}.json`); }
+function downloadSubmission() { const s = collectSubmission(); if (!s) return showToast('Бастаан хоруйгутун устуҥ', 'error'); downloadJSON(s, `работа_${currentUser.fullName.replace(/[^А-Яа-яA-Za-z0-9_-]+/g,'_')}_${s.task.id}.json`); }
 function downloadJSON(data, filename) { const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json;charset=utf-8'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-function resetStudentProgress() { renderTask(); showToast('Задание сброшено'); }
-function updateAppsScriptStatus() { const s = document.getElementById('apps-script-status'); if (s) s.textContent = isAppsScriptConfigured() ? 'Google Таблица подключена.' : 'Google Таблица не настроена.'; }
+function resetStudentProgress() { renderTask(); showToast('Сорудах уларытыыта уһулунна'); }
+function updateAppsScriptStatus() { const s = document.getElementById('apps-script-status'); if (s) s.textContent = isAppsScriptConfigured() ? 'Google Таблица холбонно.' : 'Google Таблица туруорулла илик.'; }
 function escapeHTML(v) { return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
 function escapeAttr(v) { return String(v ?? '').replace(/[\\']/g, '\\$&').replace(/</g, '&lt;'); }
 restoreSession();
